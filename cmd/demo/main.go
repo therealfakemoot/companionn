@@ -1,13 +1,12 @@
 package main
 
 import (
-	"sort"
 	// "fmt"
 	"flag"
 	"log"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/therealfakemoot/challenge-helper"
-	"github.com/twpayne/go-geom"
 )
 
 func main() {
@@ -61,52 +60,8 @@ func main() {
 		log.Fatalf("error loading codex entries: %s", err)
 	}
 
-	challengeMap := helper.KeyedCodex(challenges)
-	bact := challengeMap["$Codex_Ent_Bacterial_06_B_Name;"]
-	log.Printf("%#v\n", bact)
-
-	s, err := helper.GetSystem(origin)
-	if err != nil {
-		log.Fatalf("error fetching reference system: %s", err)
-	}
-	log.Println("ref system:", s)
-
-	refCoords := geom.Coord{s.Coords.X, s.Coords.Y, s.Coords.Z}
-	// nearest := make(map[string]helper.CodexEntry)
-	log.Println("refCoords:", refCoords)
-
-	// challengeMap is a map of slices. i should be able to use a clever
-	// slice.Sort func here
-
-	for codexKey, entries := range challengeMap {
-		sortfunc := func(i, j int) bool {
-			iLine := geom.NewLineString(geom.XYZ)
-			iLine.SetCoords([]geom.Coord{refCoords, entries[i].Coords()})
-			entries[i].Distance = iLine.Length()
-
-			jLine := geom.NewLineString(geom.XYZ)
-			jLine.SetCoords([]geom.Coord{refCoords, entries[j].Coords()})
-			entries[j].Distance = jLine.Length()
-
-			return iLine.Length() < jLine.Length()
-		}
-		sort.Slice(entries, sortfunc)
-		log.Printf("%#v\n", entries)
-		log.Println(codexKey)
-		log.Println(len(entries))
-		return
-
-		/*
-			for system, v := range entries {
-				c, err := v.Coords()
-				if err != nil {
-					log.Printf("error getting system coords for %s: %s", v.System, err)
-				}
-				log.Printf("%s| %#v\n", v.System, c)
-
-			}
-		*/
-
-	}
+	challengeMap := helper.NewKeyedCodex(challenges)
+	challengeMap.Sort(origin)
+	// bact := challengeMap["$Codex_Ent_Bacterial_06_B_Name;"]
 
 }

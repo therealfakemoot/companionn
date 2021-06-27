@@ -3,8 +3,12 @@ package helper
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"os"
+	"sort"
 	"strconv"
+
+	"github.com/twpayne/go-geom"
 )
 
 // use this for auto-updating
@@ -69,7 +73,7 @@ func LoadEntries(fn string) ([]CodexEntry, error) {
 	return ces, nil
 }
 
-func KeyedCodex(ces []CodexEntry) map[string][]CodexEntry {
+func NewKeyedCodex(ces []CodexEntry) KeyedCodex {
 	m := make(map[string][]CodexEntry)
 
 	for _, e := range ces {
@@ -77,4 +81,31 @@ func KeyedCodex(ces []CodexEntry) map[string][]CodexEntry {
 	}
 
 	return m
+}
+
+type KeyedCodex map[string][]CodexEntry
+
+func (kc *KeyedCodex) Sort(system string) {
+	s, err := GetSystem(system)
+	if err != nil {
+		log.Fatalf("error fetching reference system: %s", err)
+	}
+	log.Println("ref system:", s)
+
+	refCoords := geom.Coord{s.Coords.X, s.Coords.Y, s.Coords.Z}
+	for _, entries := range *kc {
+		sortfunc := func(i, j int) bool {
+			iLine := geom.NewLineString(geom.XYZ)
+			iLine.SetCoords([]geom.Coord{refCoords, entries[i].Coords()})
+			entries[i].Distance = iLine.Length()
+
+			jLine := geom.NewLineString(geom.XYZ)
+			jLine.SetCoords([]geom.Coord{refCoords, entries[j].Coords()})
+			entries[j].Distance = jLine.Length()
+
+			return iLine.Length() < jLine.Length()
+		}
+		sort.Slice(entries, sortfunc)
+	}
+
 }
