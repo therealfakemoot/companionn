@@ -53,3 +53,20 @@ func FlattenHierarchy(hw HWrapper) map[string]HEntry {
 
 	return m
 }
+
+func NameMapping() (map[string]HEntry, map[string]string, error) {
+	humanToCodex := make(map[string]HEntry)
+	codexToHuman := make(map[string]string)
+
+	rawHierarchy, err := LoadHierarchy("json/hierarchy.json")
+	if err != nil {
+		return humanToCodex, codexToHuman, fmt.Errorf("error loading hierarchy data: %w", err)
+	}
+
+	humanToCodex = FlattenHierarchy(rawHierarchy)
+	for k, v := range humanToCodex {
+		codexToHuman[v.Name] = k
+	}
+
+	return humanToCodex, codexToHuman, nil
+}

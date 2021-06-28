@@ -85,6 +85,38 @@ func NewKeyedCodex(ces []CodexEntry) KeyedCodex {
 
 type KeyedCodex map[string][]CodexEntry
 
+func (kc KeyedCodex) Render(w io.Writer) error {
+	_, codexToHuman, err := NameMapping()
+	if err != nil {
+		return fmt.Errorf("error loading name-mapping: %w", err)
+	}
+
+	closest := make([]CodexEntry, len(kc))
+	i := 0
+	for _, v := range kc {
+		closest[i] = v[0]
+		i++
+		// closest = append(closest, v[0])
+	}
+	sortfunc := func(i, j int) bool {
+		return closest[i].Distance < closest[j].Distance
+	}
+	log.Printf("%#v\n", closest)
+	sort.Slice(closest, sortfunc)
+
+	tw := tablewriter.NewWriter(w)
+	tw.SetHeader([]string{"Target", "System", "Distance"})
+	tdata := make([][]string, len(kc))
+	for _, entry := range closest {
+		humanName := codexToHuman[entry.Name]
+		tdata = append(tdata, []string{humanName, entry.System, fmt.Sprintf("%.2fly", entry.Distance)})
+	}
+	tw.AppendBulk(tdata)
+
+	tw.Render()
+	return nil
+}
+
 func (kc *KeyedCodex) Sort(system string) {
 	s, err := GetSystem(system)
 	if err != nil {
