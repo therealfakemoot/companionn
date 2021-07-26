@@ -6,29 +6,12 @@ import (
 	"log"
 	"os"
 	"sort"
-	"strconv"
 
 	"github.com/twpayne/go-geom"
 )
 
 // use this for auto-updating
 // https://drive.google.com/uc?id=138PgJgUCv1Y10LRDsj3eUnOZh3cf_1v4
-
-type StringFloat float64
-
-func (ce CodexEntry) Coords() []float64 {
-	fs := make([]float64, 3)
-	x, _ := strconv.ParseFloat(ce.X, 64)
-	fs[0] = x
-
-	y, _ := strconv.ParseFloat(ce.Y, 64)
-	fs[1] = y
-
-	z, _ := strconv.ParseFloat(ce.Z, 64)
-	fs[2] = z
-
-	return fs
-}
 
 type CodexEntry struct {
 	IndexID              interface{} `json:"index_id"`
@@ -38,9 +21,9 @@ type CodexEntry struct {
 	ReportedAt           string      `json:"reported_at"`
 	Cmdrname             string      `json:"cmdrName"`
 	System               string      `json:"system"`
-	X                    string      `json:"x"`
-	Y                    string      `json:"y"`
-	Z                    string      `json:"z"`
+	X                    json.Number `json:"x"`
+	Y                    json.Number `json:"y"`
+	Z                    json.Number `json:"z"`
 	Body                 string      `json:"body"`
 	Latitude             string      `json:"latitude"`
 	Longitude            string      `json:"longitude"`
