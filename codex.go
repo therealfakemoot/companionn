@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
+	// "log"
 	"os"
 	"sort"
 
@@ -102,22 +102,31 @@ func (kc KeyedCodex) Render(w io.Writer, count int) error {
 	return nil
 }
 
-func (kc *KeyedCodex) Sort(system string, cache map[string]EDSMSystem) {
+func (kc KeyedCodex) CalculateDistances(reference string, cache map[string]EDSMSystem) error {
+	for cat, entries := range kc {
+		for idx, entry := range entries {
+			d, err := CodexDistance(reference, entry, cache)
+			if err != nil {
+				return fmt.Errorf("failed to calculate distance from %s to %s: %w", reference, entry.Name, err)
+			}
+
+			if d == 0.0 && entry.System != reference {
+				return fmt.Errorf("zero distance calculated for non-self system: %s -> %s\n", entry.System, reference)
+			}
+
+			entry.Distance = d
+			kc[cat][idx] = entry
+
+		}
+
+	}
+	return nil
+}
+
+func (kc *KeyedCodex) Sort() {
 	for _, entries := range *kc {
 		sortfunc := func(i, j int) bool {
-			d1, err := CodexDistance(system, entries[i], cache)
-			if err != nil {
-				log.Printf("error fetching EDSM data for %s: %s", entries[i].System, err)
-			}
-			entries[i].Distance = d1
-
-			d2, err := CodexDistance(system, entries[j], cache)
-			if err != nil {
-				log.Printf("error fetching EDSM data for %s: %s", entries[j].System, err)
-			}
-			entries[j].Distance = d2
-
-			return d1 < d2
+			return entries[i].Distance < entries[j].Distance
 		}
 		sort.Slice(entries, sortfunc)
 	}

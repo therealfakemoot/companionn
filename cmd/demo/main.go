@@ -36,8 +36,8 @@ func main() {
 
 	keyedCodex := helper.NewKeyedCodex(entries)
 	cache := make(map[string]helper.EDSMSystem)
-	keyedCodex.Sort(origin, cache)
-	// bact := challengeMap["$Codex_Ent_Bacterial_06_B_Name;"]
+	keyedCodex.CalculateDistances(origin, cache)
+	keyedCodex.Sort()
 
 	keyedCodex.Render(os.Stdout, count)
 
