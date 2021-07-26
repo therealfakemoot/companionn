@@ -7,7 +7,7 @@ import (
 	"os"
 
 	// "github.com/davecgh/go-spew/spew"
-	"github.com/therealfakemoot/challenge-helper"
+	"github.com/therealfakemoot/companionn"
 )
 
 func main() {
@@ -29,13 +29,13 @@ func main() {
 		log.Fatal("Please supply a Commander name.")
 	}
 
-	entries, err := helper.LoadEntries("json/codex.json")
+	entries, err := companionn.LoadEntries("json/codex.json")
 	if err != nil {
 		log.Fatalf("error loading codex entries: %s", err)
 	}
 
-	keyedCodex := helper.NewKeyedCodex(entries)
-	cache := make(map[string]helper.EDSMSystem)
+	keyedCodex := companionn.NewKeyedCodex(entries)
+	cache := make(map[string]companionn.EDSMSystem)
 	keyedCodex.CalculateDistances(origin, cache)
 	keyedCodex.Sort()
 

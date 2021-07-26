@@ -1,4 +1,4 @@
-module github.com/therealfakemoot/challenge-helper
+module github.com/therealfakemoot/companionn
 
 go 1.16
 
