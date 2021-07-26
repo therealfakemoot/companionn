@@ -3,11 +3,13 @@ package helper
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"sort"
 
-	"github.com/twpayne/go-geom"
+	// "github.com/davecgh/go-spew/spew"
+	"github.com/olekukonko/tablewriter"
 )
 
 // use this for auto-updating
@@ -68,7 +70,7 @@ func NewKeyedCodex(ces []CodexEntry) KeyedCodex {
 
 type KeyedCodex map[string][]CodexEntry
 
-func (kc KeyedCodex) Render(w io.Writer) error {
+func (kc KeyedCodex) Render(w io.Writer, count int) error {
 	_, codexToHuman, err := NameMapping()
 	if err != nil {
 		return fmt.Errorf("error loading name-mapping: %w", err)
@@ -84,15 +86,15 @@ func (kc KeyedCodex) Render(w io.Writer) error {
 	sortfunc := func(i, j int) bool {
 		return closest[i].Distance < closest[j].Distance
 	}
-	log.Printf("%#v\n", closest)
 	sort.Slice(closest, sortfunc)
 
 	tw := tablewriter.NewWriter(w)
-	tw.SetHeader([]string{"Target", "System", "Distance"})
+	tw.SetHeader([]string{"Target", "System", "Body", "Distance"})
 	tdata := make([][]string, len(kc))
-	for _, entry := range closest {
+	for _, entry := range closest[:count-1] {
 		humanName := codexToHuman[entry.Name]
-		tdata = append(tdata, []string{humanName, entry.System, fmt.Sprintf("%.2fly", entry.Distance)})
+		dist := fmt.Sprintf("%.2fly", entry.Distance)
+		tdata = append(tdata, []string{humanName, entry.System, entry.Body, dist})
 	}
 	tw.AppendBulk(tdata)
 
@@ -100,25 +102,22 @@ func (kc KeyedCodex) Render(w io.Writer) error {
 	return nil
 }
 
-func (kc *KeyedCodex) Sort(system string) {
-	s, err := GetSystem(system)
-	if err != nil {
-		log.Fatalf("error fetching reference system: %s", err)
-	}
-	log.Println("ref system:", s)
-
-	refCoords := geom.Coord{s.Coords.X, s.Coords.Y, s.Coords.Z}
+func (kc *KeyedCodex) Sort(system string, cache map[string]EDSMSystem) {
 	for _, entries := range *kc {
 		sortfunc := func(i, j int) bool {
-			iLine := geom.NewLineString(geom.XYZ)
-			iLine.SetCoords([]geom.Coord{refCoords, entries[i].Coords()})
-			entries[i].Distance = iLine.Length()
+			d1, err := CodexDistance(system, entries[i], cache)
+			if err != nil {
+				log.Printf("error fetching EDSM data for %s: %s", entries[i].System, err)
+			}
+			entries[i].Distance = d1
 
-			jLine := geom.NewLineString(geom.XYZ)
-			jLine.SetCoords([]geom.Coord{refCoords, entries[j].Coords()})
-			entries[j].Distance = jLine.Length()
+			d2, err := CodexDistance(system, entries[j], cache)
+			if err != nil {
+				log.Printf("error fetching EDSM data for %s: %s", entries[j].System, err)
+			}
+			entries[j].Distance = d2
 
-			return iLine.Length() < jLine.Length()
+			return d1 < d2
 		}
 		sort.Slice(entries, sortfunc)
 	}
