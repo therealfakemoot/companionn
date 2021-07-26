@@ -14,12 +14,14 @@ func main() {
 	var (
 		name    string
 		origin  string
+		count   int
 		nearest bool
 	)
 
 	flag.StringVar(&name, "name", "", "Commander name")
 	flag.StringVar(&origin, "origin", "Sol", "Reference system")
 	flag.BoolVar(&nearest, "nearest", false, "Print only the nearest codex entry")
+	flag.IntVar(&count, "count", 10, "Maximum entries to display.")
 
 	flag.Parse()
 
@@ -27,15 +29,16 @@ func main() {
 		log.Fatal("Please supply a Commander name.")
 	}
 
-	challenges, err := helper.LoadEntries("json/codex.json")
+	entries, err := helper.LoadEntries("json/codex.json")
 	if err != nil {
 		log.Fatalf("error loading codex entries: %s", err)
 	}
 
-	challengeMap := helper.NewKeyedCodex(challenges)
-	challengeMap.Sort(origin)
+	keyedCodex := helper.NewKeyedCodex(entries)
+	cache := make(map[string]helper.EDSMSystem)
+	keyedCodex.Sort(origin, cache)
 	// bact := challengeMap["$Codex_Ent_Bacterial_06_B_Name;"]
 
-	challengeMap.Render(os.Stdout)
+	keyedCodex.Render(os.Stdout, count)
 
 }
